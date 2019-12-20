@@ -39,7 +39,7 @@ describe('Things Endpoints', function () {
       beforeEach('insert users, things, and reviews', async () => {
         await helpers.seedUsers(db, testUsers);
         await helpers.seedThings(db, testThings);
-        await helpers.seedReviews(db, testReviews)
+        await helpers.seedReviews(db, testReviews);
       })
 
       it('responds with 200 and all of the things', (done) => {
