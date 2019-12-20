@@ -1,5 +1,4 @@
 const AuthService = require('../auth/auth-service')
-const bcrypt = require('bcryptjs')
 //validates credentials
 
 
@@ -30,7 +29,7 @@ function requireAuth(req, res, next) {
             }
 
             //the server will calculate the user_id based on the Authorization Header
-            return bcrypt.compare(tokenPassword, user.password)
+            return AuthService.comparePasswords(tokenPassword, user.password)
                 .then(passwordsMatch => {
                     if (!passwordsMatch) {
                         return res.status(401).json({ error: 'Unauthorized request' })
