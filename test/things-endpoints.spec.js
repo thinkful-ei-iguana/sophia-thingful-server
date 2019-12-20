@@ -36,17 +36,13 @@ describe('Things Endpoints', function () {
     })
 
     context('Given there are things in the database', () => {
-      beforeEach('insert users, things, and reviews', () => {
-        try {
-          helpers.seedUsers(db, testUsers)
-          helpers.seedThings(db, testThings)
-          // helpers.seedReviews(db, testReviews)
-        } catch (ex) {
-          console.log(ex)
-        }
+      beforeEach('insert users, things, and reviews', async () => {
+        await helpers.seedUsers(db, testUsers);
+        await helpers.seedThings(db, testThings);
+        await helpers.seedReviews(db, testReviews)
       })
 
-      it('responds with 200 and all of the things', () => {
+      it('responds with 200 and all of the things', (done) => {
         const expectedThings = testThings.map(thing =>
           helpers.makeExpectedThing(
             testUsers,
@@ -54,6 +50,9 @@ describe('Things Endpoints', function () {
             testReviews,
           )
         )
+
+        done()
+
         return supertest(app)
           .get('/api/things')
           .set("Authorization", helpers.makeAuthHeader(testUsers[0]))
@@ -91,11 +90,15 @@ describe('Things Endpoints', function () {
 
   describe(`GET /api/things/:thing_id`, () => {
     context(`Given no things`, () => {
-      beforeEach(() =>
-        helpers.seedUsers(db, testUsers)
-      )
-      it(`responds with 404`, () => {
+      beforeEach('insert users', async () => {
+        await helpers.seedUsers(db, testUsers)
+      })
+
+      it(`responds with 404`, (done) => {
         const thingId = 123456
+
+        done()
+
         return supertest(app)
           .get(`/api/things/${thingId}`)
           .set("Authorization", helpers.makeAuthHeader(testUsers[0]))
@@ -104,22 +107,21 @@ describe('Things Endpoints', function () {
     })
 
     context('Given there are things in the database', () => {
-      beforeEach('insert things', () =>
-        helpers.seedThingsTables(
-          db,
-          testUsers,
-          testThings,
-          testReviews,
-        )
-      )
+      beforeEach('insert users, things, and reviews', async () => {
+        await helpers.seedUsers(db, testUsers);
+        await helpers.seedThings(db, testThings);
+        await helpers.seedReviews(db, testReviews)
+      })
 
-      it('responds with 200 and the specified thing', () => {
+      it('responds with 200 and the specified thing', (done) => {
         const thingId = 2
         const expectedThing = helpers.makeExpectedThing(
           testUsers,
           testThings[thingId - 1],
           testReviews,
         )
+
+        done();
 
         return supertest(app)
           .get(`/api/things/${thingId}`)
@@ -135,15 +137,16 @@ describe('Things Endpoints', function () {
         expectedThing,
       } = helpers.makeMaliciousThing(testUser)
 
-      beforeEach('insert malicious thing', () => {
-        return helpers.seedMaliciousThing(
+      beforeEach('insert malicious thing', async () => {
+        await helpers.seedMaliciousThing(
           db,
           testUser,
           maliciousThing,
         )
       })
 
-      it('removes XSS attack content', () => {
+      it('removes XSS attack content', (done) => {
+        done()
         return supertest(app)
           .get(`/api/things/${maliciousThing.id}`)
           .set("Authorization", helpers.makeAuthHeader(testUsers[0]))
@@ -158,11 +161,12 @@ describe('Things Endpoints', function () {
 
   describe(`GET /api/things/:thing_id/reviews`, () => {
     context(`Given no things`, () => {
-      beforeEach(() =>
-        helpers.seedUsers(db, testUsers)
+      beforeEach('insert users', async () =>
+        await helpers.seedUsers(db, testUsers)
       )
-      it(`responds with 404`, () => {
+      it(`responds with 404`, (done) => {
         const thingId = 123456
+        done()
         return supertest(app)
           .get(`/api/things/${thingId}/reviews`)
           .set("Authorization", helpers.makeAuthHeader(testUsers[0]))
@@ -171,20 +175,19 @@ describe('Things Endpoints', function () {
     })
 
     context('Given there are reviews for thing in the database', () => {
-      beforeEach('insert things', () =>
-        helpers.seedThingsTables(
-          db,
-          testUsers,
-          testThings,
-          testReviews,
-        )
-      )
+      beforeEach('insert users, things, and reviews', async () => {
+        await helpers.seedUsers(db, testUsers);
+        await helpers.seedThings(db, testThings);
+        await helpers.seedReviews(db, testReviews);
+      })
 
-      it('responds with 200 and the specified reviews', () => {
+      it('responds with 200 and the specified reviews', (done) => {
         const thingId = 1
         const expectedReviews = helpers.makeExpectedThingReviews(
           testUsers, thingId, testReviews
         )
+
+        done()
 
         return supertest(app)
           .get(`/api/things/${thingId}/reviews`)

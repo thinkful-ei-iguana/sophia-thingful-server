@@ -9,11 +9,11 @@ thingsRouter
   .get((req, res, next) => {
     ThingsService.getAllThings(req.app.get('db'))
       .then(things => {
-        let results = res.json(ThingsService.serializeThings(things))
-        return results
+        const serializedThings = ThingsService.serializeThings(things)
+        const results = res.json(serializedThings);
+        return serializedThings;
       })
       .catch(err => {
-        console.log(err);
         next();
       })
   })

@@ -30,7 +30,6 @@ reviewsRouter
           .json(ReviewsService.serializeReview(review))
       })
       .catch(err => {
-        console.log(err);
         next()
       })
   })
