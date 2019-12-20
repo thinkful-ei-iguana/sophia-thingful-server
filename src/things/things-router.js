@@ -9,9 +9,13 @@ thingsRouter
   .get((req, res, next) => {
     ThingsService.getAllThings(req.app.get('db'))
       .then(things => {
-        res.json(ThingsService.serializeThings(things))
+        let results = res.json(ThingsService.serializeThings(things))
+        return results
       })
-      .catch(next)
+      .catch(err => {
+        console.log(err);
+        next();
+      })
   })
 
 thingsRouter
@@ -19,7 +23,8 @@ thingsRouter
   .all(requireAuth) //basic auth
   .all(checkThingExists)
   .get((req, res) => {
-    res.json(ThingsService.serializeThing(res.thing))
+    let resultsThingsID = res.json(ThingsService.serializeThing(res.thing))
+        return resultsThingsID
   })
 
 thingsRouter.route('/:thing_id/reviews/')

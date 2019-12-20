@@ -1,3 +1,5 @@
+const bcrypt = require('bcryptjs')
+
 function makeUsersArray() {
   return [
     {
@@ -133,7 +135,7 @@ function makeReviewsArray(users, things) {
   ];
 }
 
-function makeExpectedThing(users, thing, reviews=[]) {
+function makeExpectedThing(users, thing, reviews = []) {
   const user = users
     .find(user => user.id === thing.user_id)
 
@@ -162,7 +164,7 @@ function makeExpectedThing(users, thing, reviews=[]) {
 }
 
 function calculateAverageReviewRating(reviews) {
-  if(!reviews.length) return 0
+  if (!reviews.length) return 0
 
   const sum = reviews
     .map(review => review.rating)
@@ -230,30 +232,74 @@ function cleanTables(db) {
   )
 }
 
-function seedThingsTables(db, users, things, reviews=[]) {
-  return db
-    .into('thingful_users')
-    .insert(users)
+
+function seedReviews(db, reviews) {
+  return db.into('thingful_reviews').insert(reviews)
     .then(() =>
-      db
-        .into('thingful_things')
-        .insert(things)
-    )
+      //update the auto sequenc to stay in sync
+      db.raw(
+        `SELECT setval('thingful_reviews_id_seq', ?)`,
+        [reviews[reviews.length - 1].id],
+      ))
+}
+
+function seedUsers(db, users) {
+  const preppedUsers = users.map(user => ({
+    ...user,
+    password: bcrypt.hashSync(user.password, 1)
+  }))
+  return db.into('thingful_users').insert(preppedUsers)
     .then(() =>
-      reviews.length && db.into('thingful_reviews').insert(reviews)
-    )
+      //update the auto sequenc to stay in sync
+      db.raw(
+        `SELECT setval('thingful_users_id_seq', ?)`,
+        [users[users.length - 1].id],
+      ))
+}
+
+function seedThings(db, things) {
+  return db.into('thingful_things').insert(things)
+    // .then(() =>
+    //   //update the auto sequenc to stay in sync
+    //   db.raw(
+    //     `SELECT setval('thingful_things_id_seq', ?)`,
+    //     [things[things.length - 1].id],
+    //   ))
+}
+
+
+function seedThingsTables(db, users, things, reviews = []) {
+  // use a transaction to group the queries and auto rollback on any failure
+  return db.transaction(async trx => {
+
+    await seedUsers(trx, users)
+    await seedThings(trx, things)
+    // await trx.into('thingful_things').insert(things)
+    // // update the auto sequence to match the forced id values
+    // await trx.raw(
+    //   `SELECT setval('thingful_things_id_seq', ?)`,
+    //   [things[things.length - 1].id],
+    // )
+    // only insert comments if there are some, also update the sequence counter
+    if (reviews.length > 0) {
+      //await seedReviews(trx, reviews)
+    }
+  })
 }
 
 function seedMaliciousThing(db, user, thing) {
-  return db
-    .into('thingful_users')
-    .insert([user])
+  return seedUsers(db, [user])
     .then(() =>
       db
         .into('thingful_things')
         .insert([thing])
     )
 }
+
+const makeAuthHeader = user =>
+  `basic ${Buffer.from(`${user.user_name}:${user.password}`).toString(
+    "base64"
+  )}`;
 
 module.exports = {
   makeUsersArray,
@@ -267,4 +313,8 @@ module.exports = {
   cleanTables,
   seedThingsTables,
   seedMaliciousThing,
+  makeAuthHeader,
+  seedUsers,
+  seedThings,
+  seedReviews
 }
